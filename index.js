@@ -1,6 +1,6 @@
 let fs = require('fs');
 let licenseChecker = require('license-checker');
-let MODULE_NAME_REGEX = /(?:node_modules(?:\\|\/)([^\\|\/]+))/g;
+let MODULE_NAME_REGEX = /(?:node_modules(?:\\|\/)((?:@[^\\|\/]+(?:\\|\/)[^\\|\/]+)|[^\\|\/]+))/;
 
 function checkLicense (path) {
     return new Promise(resolve => {

@@ -1,6 +1,6 @@
 {
   "name": "rollup-plugin-node-license",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "main": "index.js",
   "author": "Paul Sweeney",
   "license": "MIT",
