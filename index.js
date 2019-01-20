@@ -20,8 +20,7 @@ module.exports = function (options) {
             let matches = id.match(MODULE_NAME_REGEX);
 
             if (matches) {
-                let match = matches[matches.length - 1];
-                let basePath = id.substring(0, id.indexOf(match) + match.length);
+                let basePath = matches[0];
                 let json = JSON.parse(fs.readFileSync(`${basePath}/package.json`, 'utf8'));
                 let cacheKey = `${json.name}@${json.version}`;
 
