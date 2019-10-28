@@ -15,7 +15,11 @@ let license = require('rollup-plugin-node-license');
 rollup({
     ...
     plugins: [
-        license()
+        license({
+            // Format of the injected license comment(s).
+            // Options: "jsdoc" (default), or "table".
+            format: 'jsdoc'
+        })
     ]
 });
 ```

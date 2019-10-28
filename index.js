@@ -1,6 +1,7 @@
 let fs = require('fs');
 let licenseChecker = require('license-checker');
 let { dirname } = require('path');
+let renderTable = require('markdown-table');
 let MODULE_NAME_REGEX = /(?:node_modules(?:\\|\/)((?:@[^\\|\/]+(?:\\|\/)[^\\|\/]+)|[^\\|\/]+))/;
 
 function checkLicense (path) {
@@ -13,7 +14,42 @@ function checkLicense (path) {
     });
 }
 
-module.exports = function (options) {
+function ellipsis (text, limit) {
+    if (!text || text.length <= limit) {
+        return text;
+    }
+    return text.slice(0, limit - 3) + '...';
+}
+
+function renderAsJsDocs (data) {
+    return data.map(({ pkg, lic }) => [
+        '/*!',
+        ` * @package ${pkg.name}`,
+        ` * @version ${pkg.version}`,
+        ` * @license ${lic.licenses}`,
+        ` * @author ${lic.publisher}`,
+        ` * @url ${lic.repository || lic.email}`,
+        ' */'
+    ].join('\n')).join('');
+}
+
+function renderAsTable (data) {
+    let rows = data.map(({ pkg, lic }) => {
+        let source = ellipsis(lic.repository || lic.email, 65);
+        return [pkg.name, pkg.version, lic.licenses, ellipsis(lic.publisher, 30), source];
+    });
+    rows.unshift(['Name', 'Version', 'License(s)', 'Publisher', 'Source']);
+
+    return [
+        '/*!',
+        ' * Bundled npm packages',
+        ' *',
+        renderTable(rows, { start: ' * | ' }),
+        ' */'
+    ].join('\n');
+}
+
+module.exports = function (options = {}) {
     let cache = {};
 
     return {
@@ -35,26 +71,22 @@ module.exports = function (options) {
         },
 
         banner: async () => {
-            let output = '';
-            
+            let data = [];
+
             for (let key in cache) {
                 let entry = cache[key];
                 let license = await checkLicense(entry.basePath);
-                
+
                 Object.keys(license).forEach(dep => {
-                    output += [
-                        `/*!`,
-                        ` * @package ${entry.json.name}`,
-                        ` * @version ${entry.json.version}`,
-                        ` * @license ${license[dep].licenses}`,
-                        ` * @author ${license[dep].publisher}`,
-                        ` * @url ${license[dep].repository || license[dep].email}`,
-                        ` */`
-                    ].join('\n');
-                });                
+                    data.push({ pkg: entry.json, lic: license[dep] });
+                });
             }
 
-            return output;
+            if (options.format === 'table') {
+                return renderAsTable(data);
+            } else {
+                return renderAsJsDocs(data);
+            }
         }
     }
 }
