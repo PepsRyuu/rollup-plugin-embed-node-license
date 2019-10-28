@@ -38,6 +38,7 @@ function renderAsTable (data) {
         let source = ellipsis(lic.repository || lic.email, 65);
         return [pkg.name, pkg.version, lic.licenses, ellipsis(lic.publisher, 30), source];
     });
+    rows.sort(([a], [b]) => a.localeCompare(b));
     rows.unshift(['Name', 'Version', 'License(s)', 'Publisher', 'Source']);
 
     return [
