@@ -7,20 +7,20 @@ License comments are then appended to the generated bundle.
 
 ## How to use
 
-Simply load the plugin into your rollup configuration.
+Load the plugin into your Rollup configuration.
 
 ```
-let NodeLicense = require('rollup-plugin-node-license');
+let license = require('rollup-plugin-node-license');
 
 rollup({
     ...
     plugins: [
-        new NodeLicense()
+        license()
     ]
 });
 ```
 
-If you're using Uglify, you should apply the following rule so that the licenses are not removed:
+With ```rollup-plugin-terser```, the following step is not needed. If you're using ```rollup-plugin-uglify```, you should apply the following rule so that the licenses are not removed:
 
 ```
 uglify({
