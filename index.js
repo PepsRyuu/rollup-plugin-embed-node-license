@@ -71,16 +71,13 @@ module.exports = function (options = {}) {
         },
 
         banner: async () => {
-            let data = [];
-
-            for (let key in cache) {
-                let entry = cache[key];
-                let license = await checkLicense(entry.basePath);
-
-                Object.keys(license).forEach(dep => {
-                    data.push({ pkg: entry.json, lic: license[dep] });
-                });
-            }
+            let data = await Promise.all(
+                Object.values(cache).map(async ({ basePath, json }) => {
+                    let license = await checkLicense(basePath);
+                    return Object.values(license).map(lic => ({ pkg: json, lic }));
+                })
+            );
+            data = [].concat.apply([], data);  // flatten array
 
             if (options.format === 'table') {
                 return renderAsTable(data);
