@@ -1,5 +1,6 @@
 let fs = require('fs');
 let licenseChecker = require('license-checker');
+let { dirname } = require('path');
 let MODULE_NAME_REGEX = /(?:node_modules(?:\\|\/)((?:@[^\\|\/]+(?:\\|\/)[^\\|\/]+)|[^\\|\/]+))/;
 
 function checkLicense (path) {
@@ -20,8 +21,11 @@ module.exports = function (options) {
             let matches = id.match(MODULE_NAME_REGEX);
 
             if (matches) {
-                let basePath = matches[0];
-                let json = JSON.parse(fs.readFileSync(`${basePath}/package.json`, 'utf8'));
+                let name = matches[1];
+                let pkgPath = require.resolve(`${name}/package.json`);
+                let basePath = dirname(pkgPath);
+
+                let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
                 let cacheKey = `${json.name}@${json.version}`;
 
                 if (!cache[cacheKey]) {
