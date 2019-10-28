@@ -34,7 +34,7 @@ module.exports = function (options) {
             }
         },
 
-        renderChunk: async (code) => {
+        banner: async () => {
             let output = '';
             
             for (let key in cache) {
@@ -54,7 +54,7 @@ module.exports = function (options) {
                 });                
             }
 
-            return output + code;
+            return output;
         }
     }
 }
