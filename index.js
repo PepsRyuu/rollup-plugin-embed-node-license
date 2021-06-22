@@ -54,24 +54,30 @@ module.exports = function (options = {}) {
     let cache = {};
 
     return {
-        load: (id) => {
+        name: 'node-license',
+
+        load: function (id) {
             let matches = id.match(MODULE_NAME_REGEX);
 
             if (matches) {
                 let name = matches[1];
-                let pkgPath = require.resolve(`${name}/package.json`);
-                let basePath = dirname(pkgPath);
+                try {
+                    let pkgPath = require.resolve(`${name}/package.json`);
+                    let basePath = dirname(pkgPath);
 
-                let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-                let cacheKey = `${json.name}@${json.version}`;
+                    let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+                    let cacheKey = `${json.name}@${json.version}`;
 
-                if (!cache[cacheKey]) {
-                    cache[cacheKey] = { basePath, json };
+                    if (!cache[cacheKey]) {
+                        cache[cacheKey] = { basePath, json };
+                    }
+                } catch (e) {
+                    this.warn('Failed to parse package information for "' + name + '"');
                 }
             }
         },
 
-        banner: async () => {
+        banner: async function () {
             let data = await Promise.all(
                 Object.values(cache).map(async ({ basePath, json }) => {
                     let license = await checkLicense(basePath);
