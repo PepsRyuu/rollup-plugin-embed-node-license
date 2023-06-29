@@ -53,31 +53,47 @@ function renderAsTable (data) {
 module.exports = function (options = {}) {
     let cache = {};
 
+    function loadIntoCache(name) {
+        try {
+            let pkgPath = require.resolve(`${name}/package.json`);
+            let basePath = dirname(pkgPath);
+            let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
+            let cacheKey = `${json.name}@${json.version}`;
+        
+            if (!cache[cacheKey]) {
+                cache[cacheKey] = { name, basePath, json };
+            }
+        } catch (e) {
+            this.warn('Failed to parse package information for "' + name + '"');
+        }
+    }
+
     return {
         name: 'node-license',
+
+        resolveId: {
+            order: 'pre',
+            handler: (id) => {
+                if (!id.startsWith('.')) {
+                    loadIntoCache(id);
+                }
+            }
+        },
 
         load: function (id) {
             let matches = id.match(MODULE_NAME_REGEX);
 
             if (matches) {
                 let name = matches[1];
-                try {
-                    let pkgPath = require.resolve(`${name}/package.json`);
-                    let basePath = dirname(pkgPath);
-
-                    let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
-                    let cacheKey = `${json.name}@${json.version}`;
-
-                    if (!cache[cacheKey]) {
-                        cache[cacheKey] = { basePath, json };
-                    }
-                } catch (e) {
-                    this.warn('Failed to parse package information for "' + name + '"');
+                if (!name.startsWith('.')) {
+                    loadIntoCache(name);
                 }
             }
         },
 
         banner: async function () {
+            let exclude = options.exclude || [];
+
             let data = await Promise.all(
                 Object.values(cache).map(async ({ basePath, json }) => {
                     let license = await checkLicense(basePath);
@@ -86,6 +102,8 @@ module.exports = function (options = {}) {
             );
             data = [].concat.apply([], data);  // flatten array
 
+            data = data.filter(d => !exclude.includes(d.pkg.name));
+            
             if (options.format === 'table') {
                 return renderAsTable(data);
             } else {
