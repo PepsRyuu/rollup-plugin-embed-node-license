@@ -55,7 +55,21 @@ module.exports = function (options = {}) {
 
     function loadIntoCache(name) {
         try {
-            let pkgPath = require.resolve(`${name}/package.json`);
+            let pathWithPkgJson = name;
+            let parts = name.split('/');
+            
+            // Support situation where you might import a file inside a package
+            while (parts.length > 0) {
+                try {
+                    require.resolve(`${parts.join('/')}/package.json`);
+                    pathWithPkgJson = parts.join('/');
+                    break;
+                } catch {
+                    parts.pop();
+                }
+            }
+
+            let pkgPath = require.resolve(`${pathWithPkgJson}/package.json`);
             let basePath = dirname(pkgPath);
             let json = JSON.parse(fs.readFileSync(pkgPath, 'utf8'));
             let cacheKey = `${json.name}@${json.version}`;
@@ -73,9 +87,9 @@ module.exports = function (options = {}) {
 
         resolveId: {
             order: 'pre',
-            handler: (id) => {
+            handler: function (id) {
                 if (!id.startsWith('.')) {
-                    loadIntoCache(id);
+                    loadIntoCache.call(this, id);
                 }
             }
         },
@@ -86,7 +100,7 @@ module.exports = function (options = {}) {
             if (matches) {
                 let name = matches[1];
                 if (!name.startsWith('.')) {
-                    loadIntoCache(name);
+                    loadIntoCache.call(this, name);
                 }
             }
         },
